@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Phishing Page Detector</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/lucide@0.249.0/dist/lucide.min.js"></script>
+    <style>
+       body {
+    background-image: url('/static/images/hack.jpg');
+    background-size: cover;
+    background-position: center;
+    background-attachment: fixed;
+}
+
+        .phishing { background-color: rgba(255, 230, 230, 0.8); color: #d9534f; }
+        .safe { background-color: rgba(230, 255, 230, 0.8); color: #4cae4c; }
+    </style>
+</head>
+<body class="bg-white flex items-center justify-center min-h-screen">
+    <div class="w-full max-w-md mx-auto mt-10 bg-white p-6 rounded-lg shadow-md">
+        <h1 class="text-2xl font-bold mb-4">Phishing Page Detector</h1>
+        <p class="text-gray-600 mb-6">Enter a URL to check if it is a phishing site.</p>
+        <form id="urlForm" class="space-y-4">
+            <div class="space-y-2">
+                <label for="url" class="block text-gray-700">URL</label>
+                <input type="text" id="url" name="url" placeholder="https://example.com" class="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500">
+                <p id="error" class="text-red-500 text-sm hidden">Please enter a valid URL.</p>
+            </div>
+            <button type="submit" class="w-full p-2 bg-blue-500 text-white rounded hover:bg-blue-600">Analyze</button>
+        </form>
+        <div id="result" class="mt-4 p-4 rounded hidden"></div>
+    </div>
+
+    <script>
+        document.getElementById('urlForm').addEventListener('submit', function(event) {
+            event.preventDefault();
+            const urlInput = document.getElementById('url');
+            const error = document.getElementById('error');
+            const resultDiv = document.getElementById('result');
+
+            const url = urlInput.value.trim();
+            if (!url) {
+                error.classList.remove('hidden');
+                resultDiv.classList.add('hidden');
+                return;
+            }
+
+            error.classList.add('hidden');
+
+            fetch('/analyze', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ url: url })
+            })
+            .then(response => response.json())
+            .then(data => {
+                resultDiv.classList.remove('hidden');
+                resultDiv.className = `mt-4 p-4 rounded ${data.result === 'Phishing' ? 'phishing' : 'safe'}`;
+                resultDiv.innerHTML = `
+                    <div class="flex items-center space-x-2">
+                        <svg class="w-5 h-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+                            ${data.result === 'Phishing' ? '<path fill-rule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clip-rule="evenodd"/>' : '<path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-8.707l-3-3a1 1 0 00-1.414 1.414L10.586 9H7a1 1 0 100 2h3.586l-1.293 1.293a1 1 0 101.414 1.414l3-3a1 1 0 000-1.414z" clip-rule="evenodd"/>'}
+                        </svg>
+                        <span class="font-semibold">${data.result === 'Phishing' ? 'Phishing Site Detected!' : 'Safe Site!'}</span>
+                    </div>
+                `;
+            })
+            .catch(error => {
+                console.error('Error:', error);
+            });
+        });
+    </script>
+</body>
+</html>
